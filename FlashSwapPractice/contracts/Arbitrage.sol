@@ -9,13 +9,13 @@ import { IUniswapV2Callee } from "v2-core/interfaces/IUniswapV2Callee.sol";
 // This is a pracitce contract for flash swap arbitrage
 contract Arbitrage is IUniswapV2Callee, Ownable {
     struct CallbackData {
-        address borrowPool;
-        address targetSwapPool;
-        address borrowToken;
-        address debtToken;
-        uint256 borrowAmount;
-        uint256 debtAmount;
-        uint256 debtAmountOut;
+        address borrowPool; // 於此 Pool 借錢
+        address targetSwapPool; // 於此 Pool 換錢
+        address borrowToken; // 要借的 token
+        address debtToken; // 要還的 token
+        uint256 borrowAmount; // 要借的 borrowToken 數量
+        uint256 debtAmount; // 要還的 debtToken 數量
+        uint256 debtAmountOut; // 預計換到的 debtToken 數量
     }
 
     //
@@ -42,10 +42,11 @@ contract Arbitrage is IUniswapV2Callee, Ownable {
         // 3. decode callback data
         CallbackData memory callback = abi.decode(data, (CallbackData));
         // 4. swap WETH to USDC
-        IERC20(callback.borrowToken).transfer(callback.targetSwapPool, callback.borrowAmount); // send weth to higher pool to swap
-        IUniswapV2Pair(callback.targetSwapPool).swap(0, callback.debtAmountOut, address(this), ""); // swap usdc
+        IERC20(callback.borrowToken).transfer(callback.targetSwapPool, callback.borrowAmount);
+        IUniswapV2Pair(callback.targetSwapPool).swap(0, callback.debtAmountOut, address(this), "");
         // 5. repay USDC to lower price pool
         IERC20(callback.debtToken).transfer(callback.borrowPool, callback.debtAmount);
+        // 收益 等於 debtAmountOut - debtAmount 個 debtToken （Usdc）
     }
 
     // Method 1 is
